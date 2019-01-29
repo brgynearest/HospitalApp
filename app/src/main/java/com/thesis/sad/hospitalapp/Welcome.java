@@ -40,9 +40,11 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.maps.android.SphericalUtil;
 import com.thesis.sad.hospitalapp.Interaction.Common;
@@ -89,6 +91,17 @@ public class Welcome extends AppCompatActivity implements
         availableRef = FirebaseDatabase.getInstance().getReference().child(".info/connected");
         currentHospitalRef = FirebaseDatabase.getInstance().getReference(Common.available_hospital)
                 .child(FirebaseAuth.getInstance().getCurrentUser().getUid());
+        availableRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                currentHospitalRef.onDisconnect().removeValue();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
 
         mapFragment.getMapAsync(this);
         location_switch = findViewById(R.id.location_on_off_switch);
@@ -107,7 +120,7 @@ public class Welcome extends AppCompatActivity implements
                         stopLocationUpdates();
                         mCurrent.remove();
                         mMap.clear();
-                        snackbar.make(mapFragment.getView(), "You are not available", 5000).show();
+                        snackbar.make(mapFragment.getView(), "You are not available", Snackbar.LENGTH_LONG).show();
                     }
                 }catch (Exception ex){
                     Log.d(TAG,"ToggleSwitch Error:" + ex.getMessage());

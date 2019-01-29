@@ -1,7 +1,9 @@
 package com.thesis.sad.hospitalapp;
 
 import android.content.Intent;
+import android.location.Location;
 import android.media.MediaPlayer;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -11,6 +13,15 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
+import com.google.android.gms.maps.model.LatLng;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.gson.Gson;
 import com.thesis.sad.hospitalapp.Interaction.Common;
 import com.thesis.sad.hospitalapp.Model.FCMResponse;
 import com.thesis.sad.hospitalapp.Model.Notification;
@@ -29,18 +40,19 @@ import retrofit2.Response;
 
 public class HospitalCall extends AppCompatActivity {
 
-    TextView textTime,textDistance,textAddress;
+    private static final String TAG = "HospitalCall";
+    TextView text_service;
     Button btnrespond,btndecline;
     MediaPlayer mediaPlayer;
     IGoogleAPI mService;
     String ambulanceid;
     IFCMService mFCMService;
     double lat,lng;
+    private Location mLastLocation;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_hospital_call);
-
         btnrespond = findViewById(R.id.btn_respond);
         btndecline = findViewById(R.id.btn_decline);
         btndecline.setOnClickListener(new View.OnClickListener() {
@@ -53,45 +65,87 @@ public class HospitalCall extends AppCompatActivity {
         btnrespond.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(HospitalCall.this, HospitalTracking.class);
-                intent.putExtra("lat",lat);
-                intent.putExtra("lng",lng);
-                intent.putExtra("ambulanceid",ambulanceid);
-                startActivity(intent);
-                finish();
+                acceptrequest(ambulanceid);
             }
         });
 
         mService = Common.getIGoogleAPI();
         mFCMService = Common.getFCMService();
-        textTime = findViewById(R.id.textTime);
-        textAddress = findViewById(R.id.textAddress);
-        textDistance = findViewById(R.id.textDistance);
+        text_service = findViewById(R.id.textService);
         mediaPlayer = MediaPlayer.create(this,R.raw.ringtone);
         mediaPlayer.setLooping(true);
         mediaPlayer.start();
 
         if(getIntent() !=null)
         {
-            lat = getIntent().getDoubleExtra("lat",-1.0);
-            lng = getIntent().getDoubleExtra("lng",-1.0);
-            ambulanceid = getIntent().getStringExtra("ambulance");
-            getDirection(lat,lng);
+            showServiceText();
         }
+
     }
 
-    private void declinerequest(String victimId) {
+    private void showServiceText() {
+        text_service.setText(Common.services);
+    }
+
+    private void acceptrequest(String ambulanceid){
+        DatabaseReference tokens = FirebaseDatabase.getInstance().getReference(Common.token);
+        tokens.orderByKey().equalTo(ambulanceid)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        for(DataSnapshot postsnapshot:dataSnapshot.getChildren()){
+                            Token token= postsnapshot.getValue(Token.class);
+                            String json_lat_lang = new Gson().toJson(new LatLng(mLastLocation.getLatitude(),mLastLocation.getLongitude()));
+
+                            String ambulancetoken = FirebaseInstanceId.getInstance().getToken();
+                            Notification data = new Notification(ambulancetoken,json_lat_lang);
+                            Sender content = new Sender(token.getToken(),data);
+                            Log.d(TAG, "onDataChange: "+json_lat_lang);
+
+                            mFCMService.sendMessage(content)
+                                    .enqueue(new Callback<FCMResponse>() {
+                                        @Override
+                                        public void onResponse(@NonNull Call<FCMResponse> call, @NonNull Response<FCMResponse> response) {
+                                            assert response.body() != null;
+                                            if(response.body().success == 1)
+
+                                                Toast.makeText(HospitalCall.this, "Ambulance is on the way, Please Wait...", Toast.LENGTH_SHORT).show();
+
+
+                                            else
+                                                Toast.makeText(HospitalCall.this, "Failed!, Error Occured", Toast.LENGTH_SHORT).show();
+
+                                        }
+
+                                        @Override
+                                        public void onFailure(Call<FCMResponse> call, Throwable t) {
+                                            Log.e(TAG,"Error" +t.getMessage());
+
+                                        }
+                                    });
+
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+    }
+
+    private void declinerequest(String ambulanceid) {
 
         try {
-            Token token = new Token(victimId);
-            Notification notification = new Notification("Declined", "Brgy Ambulance has declined your request");
+            Token token = new Token(ambulanceid);
+            Notification notification = new Notification("Declined", "Hospital has declined your request");
             Sender sender = new Sender(token.getToken(), notification);
             mFCMService.sendMessage(sender)
                     .enqueue(new Callback<FCMResponse>() {
                         @Override
                         public void onResponse(Call<FCMResponse> call, Response<FCMResponse> response) {
                             if (response.body().success == 1) {
-                                Toast.makeText(HospitalCall.this, "You Declined the Victims Request", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(HospitalCall.this, "You Declined the Ambulance Request", Toast.LENGTH_SHORT).show();
                                 finish();
                             }
                         }
@@ -106,53 +160,6 @@ public class HospitalCall extends AppCompatActivity {
         }
     }
 
-
-    private void getDirection(double lat,double lng) {
-        String requestApi = null;
-        try {
-            requestApi = "https://maps.googleapis.com/maps/api/directions/json?"+
-                    "mode=driving&"+
-                    "transit_routing_preferences=less_driving&"+
-                    "origin="+ Common.mLastlocation.getLatitude()+","+Common.mLastlocation.getLongitude()+"&"+
-                    "destination="+lat+","+lng+"&"+
-                    "key="+getResources().getString(R.string.google_directions_api);
-            Log.d("POWER",requestApi);
-            mService.getPath(requestApi)
-                    .enqueue(new Callback<String>() {
-                        @Override
-                        public void onResponse(Call<String> call, Response<String> response) {
-                            try {
-                                JSONObject jsonObject = new JSONObject(response.body().toString());
-                                JSONArray routes = jsonObject.getJSONArray("routes");
-                                JSONObject object = routes.getJSONObject(0);
-                                JSONArray legs = object.getJSONArray("legs");
-                                JSONObject legsobject = legs.getJSONObject(0);
-
-                                JSONObject distance = legsobject.getJSONObject("distance");
-                                textDistance.setText(distance.getString("text"));
-
-                                JSONObject time = legsobject.getJSONObject("duration");
-                                textTime.setText(time.getString("text"));
-
-                                String address = legsobject.getString("end_address");
-                                textAddress.setText(address);
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-
-                        }
-
-                        @Override
-                        public void onFailure(Call<String> call, Throwable t) {
-                            Toast.makeText(HospitalCall.this, ""+t.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
-        }
-        catch (Exception e){
-
-        }
-
-    }
 
     @Override
     protected void onResume() {

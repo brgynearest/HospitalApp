@@ -21,6 +21,7 @@ public class Common  {
     public static final String victim_information = "Victim";
     public static final String pickup_request = "helprequest";
     public static final String token = "Tokens";
+    public static String services;
 
     public static Barangay currentAmbulance;
     public static Location mLastlocation=null;
