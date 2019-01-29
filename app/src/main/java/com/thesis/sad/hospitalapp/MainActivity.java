@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
         String pwd = Paper.book().read(Common.pwd_field);
         auth = FirebaseAuth.getInstance();
         db = FirebaseDatabase.getInstance();
-        ambulance = db.getReference(Common.barangay_ambulance);
+        ambulance = db.getReference(Common.hospitals);
         signinbtn= findViewById(R.id.btn_sign_in);
         registerbtn = findViewById(R.id.btn_register);
         rootLayout = findViewById(R.id.rootLayout);
@@ -179,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
                                 Paper.book().write(Common.user_field,edittext_email.getText().toString());
                                 Paper.book().write(Common.pwd_field,edittext_password.getText().toString());
 
-                                FirebaseDatabase.getInstance().getReference(Common.barangay_ambulance)
+                                FirebaseDatabase.getInstance().getReference(Common.hospitals)
                                         .child(FirebaseAuth.getInstance().getCurrentUser().getUid())
                                         .addListenerForSingleValueEvent(new ValueEventListener() {
                                             @Override
@@ -267,7 +267,7 @@ public class MainActivity extends AppCompatActivity {
                                 brgy.setEmail(edittext_email.getText().toString());
                                 brgy.setPassword(edittext_password.getText().toString());
                                 brgy.setName(edittext_name.getText().toString());
-                                brgy.setPlatenumber(edittext_platenumber.getText().toString());
+                                brgy.setPhone(edittext_platenumber.getText().toString());
 
                                 ambulance.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
                                         .setValue(brgy)

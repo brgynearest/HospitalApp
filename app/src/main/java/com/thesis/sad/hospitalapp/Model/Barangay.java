@@ -1,16 +1,16 @@
 package com.thesis.sad.hospitalapp.Model;
 
 public class Barangay {
-    private String email, password, name, platenumber;
+    private String email, password, name, phone;
 
     public Barangay() {
     }
 
-    public Barangay(String email, String password, String name, String platenumber) {
+    public Barangay(String email, String password, String name, String phone) {
         this.email = email;
         this.password = password;
         this.name = name;
-        this.platenumber = platenumber;
+        this.phone = phone;
     }
 
     public String getEmail() {
@@ -37,11 +37,11 @@ public class Barangay {
         this.name = name;
     }
 
-    public String getPlatenumber() {
-        return platenumber;
+    public String getPhone() {
+        return phone;
     }
 
-    public void setPlatenumber(String platenumber) {
-        this.platenumber = platenumber;
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 }

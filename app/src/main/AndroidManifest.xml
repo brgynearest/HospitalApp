@@ -8,6 +8,8 @@
          location permissions for the 'MyLocation' functionality. 
     -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -37,7 +39,21 @@
 
         <activity
             android:name=".Welcome"
-            android:label="@string/title_activity_welcome"></activity>
+            android:label="@string/title_activity_welcome" />
+
+        <service android:name=".Service.MyFirebaseService">
+            <intent-filter>
+                <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
+            </intent-filter>
+        </service>
+        <service android:name=".Service.MyFirebaseMessaging">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <activity android:name=".HospitalCall" />
+        <activity android:name=".HospitalTracking"></activity>
     </application>
 
 </manifest>

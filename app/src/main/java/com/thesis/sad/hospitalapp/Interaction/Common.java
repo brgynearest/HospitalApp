@@ -16,6 +16,8 @@ public class Common  {
 
     public static final String available_Ambulance = "AvailableAmbulance";
     public static final String barangay_ambulance = "BarangayAmbulance";
+    public static final String hospitals = "Hospitals";
+    public static final String available_hospital = "AvailableHospital";
     public static final String victim_information = "Victim";
     public static final String pickup_request = "helprequest";
     public static final String token = "Tokens";
