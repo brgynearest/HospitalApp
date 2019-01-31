@@ -3,15 +3,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
     android:background="@android:color/black"
+    android:layout_height="match_parent"
     tools:context=".HospitalCall">
 
     <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/map_image"
         android:layout_width="200dp"
         android:layout_height="200dp"
-        android:layout_centerInParent="true"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="100dp"
         android:src="@drawable/map"
         app:civ_border_width="5dp"
         app:civ_border_color="@android:color/holo_green_dark"
@@ -25,15 +27,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <TextView
-            android:id="@+id/textTime"
-            android:textStyle="bold"
-            android:text="The Ambulance needs"
-            android:textSize="24sp"
-            android:textColor="@android:color/white"
-            android:textAlignment="center"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
 
         <TextView
             android:id="@+id/textService"
@@ -50,7 +43,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="80dp"
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp"
         android:orientation="horizontal"

@@ -46,6 +46,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.gson.Gson;
 import com.google.maps.android.SphericalUtil;
 import com.thesis.sad.hospitalapp.Interaction.Common;
 import com.thesis.sad.hospitalapp.Model.Token;
@@ -78,11 +79,14 @@ public class Welcome extends AppCompatActivity implements
     DatabaseReference availableRef,currentHospitalRef;
     private IGoogleAPI mService;
     private Handler handler;
+    private static String json_lat_lang;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
+
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -206,8 +210,10 @@ public class Welcome extends AppCompatActivity implements
         if (Common.mLastlocation!=null)
         {
             if(location_switch.isChecked()){
+                json_lat_lang = new Gson().toJson(new LatLng(Common.mLastlocation.getLatitude(), Common.mLastlocation.getLongitude()));
                 final double latitude = Common.mLastlocation.getLatitude();
                 final double longitude = Common.mLastlocation.getLongitude();
+
 
 
                 geoFire.setLocation(FirebaseAuth.getInstance().getCurrentUser().getUid(), new GeoLocation(latitude, longitude)
@@ -235,6 +241,12 @@ public class Welcome extends AppCompatActivity implements
     }
 
     private void startLocationUpdates() {
+        if(ActivityCompat.checkSelfPermission(this,Manifest.permission.ACCESS_COARSE_LOCATION)!=PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED)
+        {
+            return;
+        }
+        LocationServices.FusedLocationApi.requestLocationUpdates(mgoogleApiClient,mlocationRequest,this);
 
     }
     @Override
@@ -297,9 +309,15 @@ public class Welcome extends AppCompatActivity implements
         mMap.setBuildingsEnabled(false);
         mMap.getUiSettings().setZoomControlsEnabled(false);
     }
+
+
+    public static String getLocation(){
+        return json_lat_lang;
+
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-
         getMenuInflater().inflate(R.menu.signout_menu, menu);
         return true;
     }

@@ -66,6 +66,7 @@ public class HospitalCall extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 acceptrequest(ambulanceid);
+                startActivity(new Intent(HospitalCall.this, Welcome.class));
             }
         });
 
@@ -78,67 +79,54 @@ public class HospitalCall extends AppCompatActivity {
 
         if(getIntent() !=null)
         {
+
+            ambulanceid = getIntent().getStringExtra("ambulance");
             showServiceText();
         }
 
     }
 
     private void showServiceText() {
-        text_service.setText(Common.services);
+        text_service.setText("The Victim has " + Common.services);
     }
 
     private void acceptrequest(String ambulanceid){
-        DatabaseReference tokens = FirebaseDatabase.getInstance().getReference(Common.token);
-        tokens.orderByKey().equalTo(ambulanceid)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        for(DataSnapshot postsnapshot:dataSnapshot.getChildren()){
-                            Token token= postsnapshot.getValue(Token.class);
-                            String json_lat_lang = new Gson().toJson(new LatLng(mLastLocation.getLatitude(),mLastLocation.getLongitude()));
+                                Token token = new Token(ambulanceid);
+                                String location = Welcome.getLocation();
+                                String victimToken = FirebaseInstanceId.getInstance().getToken();
+                                Notification data = new Notification(victimToken, location);
+                                Sender content = new Sender(token.getToken(), data);
+                                Log.d(TAG, "onDataChange: " + location);
 
-                            String ambulancetoken = FirebaseInstanceId.getInstance().getToken();
-                            Notification data = new Notification(ambulancetoken,json_lat_lang);
-                            Sender content = new Sender(token.getToken(),data);
-                            Log.d(TAG, "onDataChange: "+json_lat_lang);
+                                mFCMService.sendMessage(content)
+                                        .enqueue(new Callback<FCMResponse>() {
+                                            @Override
+                                            public void onResponse(@NonNull Call<FCMResponse> call, @NonNull Response<FCMResponse> response) {
+                                                assert response.body() != null;
+                                                if (response.body().success == 1)
+                                                    Toast.makeText(HospitalCall.this, "You Accept Ambulance Request", Toast.LENGTH_SHORT).show();
+                                                else
+                                                    Toast.makeText(HospitalCall.this, "Failed!", Toast.LENGTH_SHORT).show();
 
-                            mFCMService.sendMessage(content)
-                                    .enqueue(new Callback<FCMResponse>() {
-                                        @Override
-                                        public void onResponse(@NonNull Call<FCMResponse> call, @NonNull Response<FCMResponse> response) {
-                                            assert response.body() != null;
-                                            if(response.body().success == 1)
+                                            }
+                                            @Override
+                                            public void onFailure(Call<FCMResponse> call, Throwable t) {
+                                                Log.e(TAG, "Error" + t.getMessage());
 
-                                                Toast.makeText(HospitalCall.this, "Ambulance is on the way, Please Wait...", Toast.LENGTH_SHORT).show();
+                                            }
+                                        });
+
+                            }
 
 
-                                            else
-                                                Toast.makeText(HospitalCall.this, "Failed!, Error Occured", Toast.LENGTH_SHORT).show();
 
-                                        }
 
-                                        @Override
-                                        public void onFailure(Call<FCMResponse> call, Throwable t) {
-                                            Log.e(TAG,"Error" +t.getMessage());
 
-                                        }
-                                    });
-
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                    }
-                });
-    }
 
     private void declinerequest(String ambulanceid) {
-
         try {
             Token token = new Token(ambulanceid);
-            Notification notification = new Notification("Declined", "Hospital has declined your request");
+            Notification notification = new Notification("Declined", "The Hospital has declined your request");
             Sender sender = new Sender(token.getToken(), notification);
             mFCMService.sendMessage(sender)
                     .enqueue(new Callback<FCMResponse>() {
@@ -156,10 +144,9 @@ public class HospitalCall extends AppCompatActivity {
                     });
         }
         catch (Exception e){
-            Toast.makeText(this, ""+e.getMessage()                                                                                                                                        , Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, ""+e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
-
 
     @Override
     protected void onResume() {
